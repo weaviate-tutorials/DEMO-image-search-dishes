@@ -1,0 +1,4 @@
+weaviate-client @ git+https://github.com/weaviate/weaviate-python-client.git@v3.99.0a3#egg=weaviate-client[GRPC]
+streamlit
+tqdm
+streamlit-image-select
