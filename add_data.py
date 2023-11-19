@@ -3,10 +3,10 @@ import base64
 import os
 import random
 from pathlib import Path
-from tqdm import tqdm
 
 import weaviate
 import weaviate.classes as wvc
+from tqdm import tqdm
 from weaviate import Config
 from weaviate.collection.collection import CollectionObject
 
@@ -40,10 +40,10 @@ def create_collection():
                 name="filepath",
                 data_type=wvc.DataType.TEXT,
                 description="Image filepath",
-                skip_vectorization = True
+                skip_vectorization=True
             )
         ],
-        description="Different food/Dishes in the world",
+        description="Different foods/dishes in the world",
         vectorizer_config=wvc.ConfigFactory.Vectorizer.multi2vec_clip(
             image_fields=[wvc.Multi2VecField(name='image', weight=0.7)],
             text_fields=[wvc.Multi2VecField(name='cuisine', weight=0.3)]
@@ -63,11 +63,13 @@ async def process_file(file_path: str, dishes: CollectionObject):
     cuisine_name = os.path.dirname(file_path).split(os.path.sep)[-1]
     base64_image = base64_image_encode(file_path)
 
-    dishes.data.insert(properties={
-        "image": base64_image,
-        "cuisine": cuisine_name,
-        "filepath": str(file_path)
-    })
+    dishes.data.insert(
+        properties={
+            "image": base64_image,
+            "cuisine": cuisine_name,
+            "filepath": file_path,
+        }
+    )
 
 
 async def insert_images(num_files_to_process: int, dishes: CollectionObject):
