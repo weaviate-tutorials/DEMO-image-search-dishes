@@ -108,7 +108,7 @@ if selection == "By eye":
 
 if selection == "By picture":
     image_file = st.file_uploader(label="upload a picture of your dish to find a similar one",
-                                   type=['png', 'jpg'])
+                                  type=['png', 'jpg'])
     if image_file is not None:
         image_bytes = image_file.getvalue()
         st.image(image=image_bytes,
