@@ -64,6 +64,9 @@ two represents their semantic similarity.
 and unzip it to the project root
 
 1. Create a virtual environment and activate it
+   > [!NOTE]  
+   > This was tested using python 3.10
+
     ```shell
     python3 -m venv venv
     source venv/bin/activate
@@ -74,19 +77,25 @@ and unzip it to the project root
     ```
 1. Run containerized instance of Weaviate. It also includes vectorizer module to compute the embeddings.
 
-   > **Note**: Make sure you don't have anything occupying port 8080   
+   > [!NOTE]  
+   > Make sure you don't have anything occupying port 8080   
    > If you do, you have the option to either stop that process or change the port that Weaviate is using.
     ```shell
     docker compose up
     ```
-1. Index the dataset in Weaviate
+1. Index the dataset in Weaviate. By default, 1000 pictures will be ingested
     ```shell
     python add_data.py
     ```
+   If you want to have a bigger dataset you can use `--image-number` parameter to set the number of pictures to ingest:
+   ```shell
+   python add_data.py --image-number 3000
+   ```
 1. Run the Streamlit demo
    ```shell
    streamlit run app.py
    ```
+   Now you can open the app on http://localhost:8501/ and also play with changing [app.py](app.py) on the fly
 
 ### Shut down
 1. Both streamlit app and docker compose can be stopped with `Ctrl+C` in the corresponding terminal window
@@ -96,7 +105,7 @@ docker compose down -v
 ```
 
 ## Usage instructions
-TODO
+[![](https://markdown-videos-api.jorgenkh.no/youtube/lxZegTVduqQ)](https://youtu.be/lxZegTVduqQ)
 
 ## Dataset license
 
