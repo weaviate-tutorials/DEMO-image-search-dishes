@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import base64
 import os
@@ -7,50 +8,47 @@ from pathlib import Path
 import weaviate
 import weaviate.classes as wvc
 from tqdm import tqdm
-from weaviate import Config
-from weaviate.collection.collection import CollectionObject
+from weaviate.collections import Collection
 
 COLLECTION_NAME = 'Dishes'
 # Set up the client
-client = weaviate.Client("http://localhost:8080",
-                         additional_config=Config(grpc_port_experimental=50051),
-                         )
+client = weaviate.connect_to_local()
 
 
 def create_collection():
     # If collection already exists, delete it
-    if client.collection.exists(COLLECTION_NAME):
-        client.collection.delete(COLLECTION_NAME)
+    if client.collections.exists(COLLECTION_NAME):
+        client.collections.delete(COLLECTION_NAME)
 
     # Create collection
-    client.collection.create(
+    client.collections.create(
         name=COLLECTION_NAME,
         properties=[
-            wvc.Property(
+            wvc.config.Property(
                 name="image",
-                data_type=wvc.DataType.BLOB,
+                data_type=wvc.config.DataType.BLOB,
                 description="Image of food"
             ),
-            wvc.Property(
+            wvc.config.Property(
                 name="cuisine",
-                data_type=wvc.DataType.TEXT,
+                data_type=wvc.config.DataType.TEXT,
                 description="The dish origin"
             ),
-            wvc.Property(
+            wvc.config.Property(
                 name="filepath",
-                data_type=wvc.DataType.TEXT,
+                data_type=wvc.config.DataType.TEXT,
                 description="Image filepath",
                 skip_vectorization=True
             )
         ],
         description="Different foods/dishes in the world",
-        vectorizer_config=wvc.ConfigFactory.Vectorizer.multi2vec_clip(
-            image_fields=[wvc.Multi2VecField(name='image', weight=0.7)],
-            text_fields=[wvc.Multi2VecField(name='cuisine', weight=0.3)]
-        ),
-        generative_config=wvc.ConfigFactory.Generative.openai()
+        vectorizer_config=wvc.config.Configure.Vectorizer.multi2vec_clip(
+            image_fields=[wvc.config.Multi2VecField(name='image', weight=0.95)],
+            text_fields=[wvc.config.Multi2VecField(name='cuisine', weight=0.05)],
+            vectorize_collection_name=False
+        )
     )
-    return client.collection.get(COLLECTION_NAME)
+    return client.collections.get(COLLECTION_NAME)
 
 
 def base64_image_encode(image_file_path):
@@ -59,7 +57,7 @@ def base64_image_encode(image_file_path):
     return base64.b64encode(image_binary).decode("utf-8")
 
 
-async def process_file(file_path: str, dishes: CollectionObject):
+async def process_file(file_path: str, dishes: Collection):
     cuisine_name = os.path.dirname(file_path).split(os.path.sep)[-1]
     base64_image = base64_image_encode(file_path)
 
@@ -67,18 +65,22 @@ async def process_file(file_path: str, dishes: CollectionObject):
         properties={
             "image": base64_image,
             "cuisine": cuisine_name,
-            "filepath": file_path,
+            "filepath": str(file_path),
         }
     )
 
 
-async def insert_images(num_files_to_process: int, dishes: CollectionObject):
+async def insert_images(num_files_to_process: int, dishes: Collection):
     root_dir = Path('Dishes')
     all_picture_paths = list(root_dir.rglob('*.jpg'))
     sampled_pictures = random.sample(all_picture_paths, num_files_to_process)
 
     print(f'There are {len(all_picture_paths)} images of food available.\n'
           f'Out of them {num_files_to_process} randomly chosen images will be ingested')
+
+    if len(all_picture_paths) < num_files_to_process:
+        num_files_to_process = len(all_picture_paths)
+        print(f'There are only {len(all_picture_paths)} pictures available. Ingesting them all.')
 
     # Create a tqdm progress bar
     with tqdm(total=num_files_to_process) as pbar:
@@ -94,11 +96,18 @@ async def insert_images(num_files_to_process: int, dishes: CollectionObject):
     print(f"Finished ingesting {len(results)} random files.")
 
 
-def main(num_files_to_process: int):
+def main():
+    num_files_to_process = args.image_number if args.image_number else 1000
     # Fetch CRUD collection object
     dishes = create_collection()
     asyncio.run(insert_images(num_files_to_process, dishes))
 
 
 if __name__ == '__main__':
-    main(1000)
+    parser = argparse.ArgumentParser(description='Add data with optional number of images to ingest. Default is 1000')
+    parser.add_argument('--image-number', type=int, default=None, help='Number of images to ingest')
+    args = parser.parse_args()
+    try:
+        main()
+    finally:
+        client.close()

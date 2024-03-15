@@ -1,4 +1,4 @@
-weaviate-client @ git+https://github.com/weaviate/weaviate-python-client.git@v3.99.0a3#egg=weaviate-client[GRPC]
-streamlit==1.28.0
-tqdm==4.66.1
+weaviate-client==4.5.1
+streamlit==1.32.0
+tqdm==4.66.2
 streamlit-image-select==0.6.0
