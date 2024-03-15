@@ -64,7 +64,7 @@ two represents their semantic similarity.
 and unzip it to the project root
 
 1. Create a virtual environment and activate it
-   > [!NOTE]  
+   > **Note**  
    > This was tested using python 3.10
 
     ```shell
@@ -77,7 +77,7 @@ and unzip it to the project root
     ```
 1. Run containerized instance of Weaviate. It also includes vectorizer module to compute the embeddings.
 
-   > [!NOTE]  
+   > **Note**  
    > Make sure you don't have anything occupying port 8080   
    > If you do, you have the option to either stop that process or change the port that Weaviate is using.
     ```shell
