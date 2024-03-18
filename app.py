@@ -5,13 +5,14 @@ from io import BytesIO
 import streamlit as st
 import weaviate
 import weaviate.classes as wvc
+from PIL import Image
 from streamlit_image_select import image_select
 
 COLLECTION_NAME = 'Dishes'
 NUM_RANDOM_PICS = 10
 
 search_params = {
-    'return_properties': ['image', 'cuisine', 'filepath'],
+    'return_properties': ['image', 'cuisine'],
     'return_metadata': wvc.query.MetadataQuery(distance=True)
 }
 
@@ -58,22 +59,27 @@ def visualize_response(response_iterable, no_show_first=False):
 
     for obj, col in zip(response_iterable, cols):
         with col:
-            st.image(BytesIO(base64.b64decode(obj.properties['image'])))
+            st.image(decode_image_to_bytes(obj))
             st.write(f"{obj.properties['cuisine']} cuisine  \n"
                      f'distance {round(obj.metadata.distance, 3)}')
 
 
 def get_random_objects(num_of_objects: int):
     all_uuids = [dish.uuid for dish in dishes.iterator()]
-    return [dishes.query.fetch_object_by_id(uuid=uuid) for uuid in random.sample(all_uuids, num_of_objects)]
+    return [dishes.query.fetch_object_by_id(uuid=uuid, return_properties=['image', 'cuisine']) for uuid in
+            random.sample(all_uuids, num_of_objects)]
 
 
 def get_selected_image_index() -> int:
     return image_select(label='Random images',
-                        images=[obj.properties['filepath'] for obj in st.session_state.random_images],
+                        images=[Image.open(decode_image_to_bytes(obj)) for obj in st.session_state.random_images],
                         return_value='index',
                         index=-1,
                         use_container_width=False)
+
+
+def decode_image_to_bytes(obj):
+    return BytesIO(base64.b64decode(obj.properties['image']))
 
 
 st.set_page_config(
@@ -119,7 +125,7 @@ if selection == "By eye":
     st.subheader("Selected image:")
     if selected_image != -1:
         selected_image_object = st.session_state.random_images[selected_image]
-        st.image(selected_image_object.properties['filepath'])
+        st.image(decode_image_to_bytes(selected_image_object))
         st.subheader("Dishes that you would like:")
         result = search_by_object(selected_image_object)
         visualize_response(result, no_show_first=True)
